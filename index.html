@@ -1,0 +1,102 @@
+// Реальные звуки из папки sounds
+const audioFiles = {
+  ambulance: new Audio("sounds/ambulance.mp3"),
+  fire: new Audio("sounds/fire.mp3"),
+  police: new Audio("sounds/police.mp3"),
+  garbage: new Audio("sounds/garbage.mp3"),
+  tow: new Audio("sounds/tow.mp3"),
+  tractor: new Audio("sounds/tractor.mp3"),
+  excavator: new Audio("sounds/excavator.mp3"),
+  bulldozer: new Audio("sounds/bulldozer.mp3")
+};
+
+Object.values(audioFiles).forEach(audio => {
+  audio.preload = "auto";
+  audio.volume = 0.8;
+});
+
+let selectedVehicle = null;
+let moving = false;
+
+function playSound(vehicle) {
+  const audio = audioFiles[vehicle.kind];
+  if (!audio) return;
+
+  audio.pause();
+  audio.currentTime = 0;
+  audio.play().catch(() => {
+    message.textContent = "Нажми на машинку ещё раз, чтобы включить звук";
+  });
+}
+
+function sendVehicle(index) {
+  if (moving || !active) return;
+
+  // Повторное нажатие на выбранную машинку — она уезжает
+  if (selectedVehicle === index) {
+    driveAway(index);
+    return;
+  }
+
+  // Первое нажатие только выбирает машинку и включает звук
+  selectedVehicle = index;
+  playSound(vehicles[index]);
+  message.textContent =
+    vehicles[index].emoji + " " +
+    vehicles[index].name + " готова к заданию!";
+}
+
+function driveAway(index) {
+  if (!active || moving) return;
+
+  moving = true;
+  const departing = active;
+  const audio = audioFiles[vehicles[index].kind];
+
+  if (audio) {
+    audio.pause();
+    audio.currentTime = 0;
+  }
+
+  message.textContent = vehicles[index].emoji +
+    " Машинка уезжает!";
+
+  departing.classList.add("drive-out");
+
+  setTimeout(() => {
+    departing.remove();
+    active = null;
+    selectedVehicle = null;
+    moving = false;
+
+    current = (index + 1) % vehicles.length;
+    createVehicle(current);
+  }, 1150);
+}
+
+// Выбор следующей машинки: предыдущая уезжает,
+// после чего новая приезжает с края экрана
+function nextVehicle() {
+  if (moving) return;
+
+  if (!active) {
+    current = (current + 1) % vehicles.length;
+    createVehicle(current);
+    return;
+  }
+
+  driveAway(current);
+}
+
+// Повторный показ текущей машинки
+function replay() {
+  if (moving) return;
+
+  if (active) {
+    active.remove();
+    active = null;
+  }
+
+  selectedVehicle = null;
+  createVehicle(current);
+}
